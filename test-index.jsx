@@ -9,8 +9,13 @@ var filters = {};
 
 //register available presenters; constant and NOT a part of component state
 var presenters = {}
-presenters['TableView'] = items => <TableView items={items}/>;
-presenters['TilesView'] = items => <TilesView items={items}/>;
+presenters['TableView'] = {
+    render: (items) => <TableView items={items}/>,
+    renderIcon: () => <span className="glyphicon glyphicon-th-list"></span>};
+presenters['TilesView'] = {
+    render: (items) => <TilesView items={items}/>,
+    renderIcon: () => <span className="glyphicon glyphicon-th"></span>};
+
 
 //Main view, TODO split into components
 var Workspace = React.createClass({
@@ -29,6 +34,10 @@ var Workspace = React.createClass({
 
   setPresenter: function (name) {
     this.setState({presenter: name});
+  },
+
+  createPresenter: function (items) {
+    return (presenters[this.state.presenter]).render(items);
   },
 
   queryData: function() {
@@ -73,13 +82,13 @@ var Workspace = React.createClass({
 
 <p className="debug" id="urldebug"></p>
 
-{presenters[this.state.presenter](this.state.items)}
+{this.createPresenter(this.state.items)}
 
 <div className="col-md-12 text-center">
 <ul className="pagination pull-left">
-  {/* TODO gather icons and event handler params from presenter definitions */}
-  <li className="page-item view-mode view-list"><a className="page-link" href = "#" onClick={()=>this.setPresenter('TableView')}><span className="glyphicon glyphicon-th-list"></span></a></li>
-  <li className="page-item view-mode view-tiles"><a className="page-link" href = "#" onClick={()=>this.setPresenter('TilesView')}><span className="glyphicon glyphicon-th"></span></a></li>
+  {Object.keys(presenters).map((key, index) => 
+    <li className="page-item view-mode" key={key}><a className="page-link" href = "#" onClick={()=>this.setPresenter(key)}>{presenters[key].renderIcon()}</a></li>
+  )}
 </ul>
 <nav>
   <ul className="pagination tablepages">
