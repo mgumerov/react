@@ -11,6 +11,7 @@ npm install --save-dev babel-preset-react
 and for actually calling ReactDOM.render:
 npm install --save-dev react
 npm install --save-dev react-dom
+npm install --save-dev axios
 
 Build with 
 node_modules\.bin\webpack test-index.jsx bundle.js

@@ -1,20 +1,50 @@
 var React = require('react');
 var TableView = require('./test-tabular');
+var TilesView = require('./test-tiles');
+var data = require('./test-data');
+
+//todo make part of component state
+var pageSize = 12;
+var filters = {};
+
+//register available presenters; constant and NOT a part of component state
+var presenters = {}
+presenters['TableView'] = items => <TableView items={items}/>;
+presenters['TilesView'] = items => <TilesView items={items}/>;
 
 //Main view, TODO split into components
 var Workspace = React.createClass({
 
-  toggleLiked: function() {
-    this.setState({
-      liked: !this.state.liked
-    });
-  },
-
   getInitialState: function() {
     return {
-      liked: false
+      items: [],
+      //name of actual presenter used, now this IS a part of component state
+      presenter: (list => {for (var any in list) return any;})(presenters)
     };
   },
+
+  componentDidMount: function() {
+    this.queryData();
+  },
+
+  setPresenter: function (name) {
+    this.setState({presenter: name});
+  },
+
+  queryData: function() {
+    var _this = this;
+//    this.serverRequest =  //todo support several? and their bulk termination
+      data.startGetPage(1, pageSize, filters)
+        .then(result =>     
+          //note the "(" before the map declaration - without them this would be recognized as method body, not the returned value :)
+          //todo version stamp to prevent overriding more fresh data, unless React watches that
+          _this.setState((state, props) => ({ items: result.page }))
+        );
+  },
+
+// todo  componentWillUnmount: function() {
+//    this.serverRequest.abort();
+//  },
 
   render: function() {
     return (
@@ -43,20 +73,13 @@ var Workspace = React.createClass({
 
 <p className="debug" id="urldebug"></p>
 
-<TableView/>
-
-<div className="row" id="myTiles">
-</div>
-              <div className="col-sm-4 col-md-3 col-lg-2">
-                  <div name="thumbnail"><img src="Картинка"/></div>
-                  <div className="caption text-center">Название</div>
-                  <p>Цена: Цена</p><p>Класс нагрузки: "Класс нагрузки"</p><p>Фаска: Фаска</p>
-              </div>
+{presenters[this.state.presenter](this.state.items)}
 
 <div className="col-md-12 text-center">
 <ul className="pagination pull-left">
-  <li className="page-item view-mode view-list"><a className="page-link" href = "#"><span className="glyphicon glyphicon-th-list"></span></a></li>
-  <li className="page-item view-mode view-tiles"><a className="page-link" href = "#"><span className="glyphicon glyphicon-th"></span></a></li>
+  {/* TODO gather icons and event handler params from presenter definitions */}
+  <li className="page-item view-mode view-list"><a className="page-link" href = "#" onClick={()=>this.setPresenter('TableView')}><span className="glyphicon glyphicon-th-list"></span></a></li>
+  <li className="page-item view-mode view-tiles"><a className="page-link" href = "#" onClick={()=>this.setPresenter('TilesView')}><span className="glyphicon glyphicon-th"></span></a></li>
 </ul>
 <nav>
   <ul className="pagination tablepages">

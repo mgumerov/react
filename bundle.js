@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 3);
+/******/ 	return __webpack_require__(__webpack_require__.s = 6);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -77,6 +77,59 @@ module.exports = React;
 /***/ (function(module, exports, __webpack_require__) {
 
 var React = __webpack_require__(0);
+var axios = __webpack_require__(5);
+
+var result = {};
+result.startGetPage =
+//returns a promise which resolves to {total, page} on success and status-text on failure
+function (pageIdx, pageSize, filters) {
+  //we use those in async handler so let's make sure they are immutable
+  if (typeof pageIdx != "number") throw "Number expected";
+  if (typeof pageSize != "number") throw "Number expected";
+
+  return axios({
+    headers: { 'Content-Type': 'application/json' },
+    url: 'data.json',
+    params: { page: pageIdx } //url params for GET //todo + filters
+  }).then(function done(response) {
+    var filtered = response.data.page;
+    if (filters && filters.classes) {
+      filtered = filtered.filter(_ => filters.classes.includes(_['Класс нагрузки']));
+    }
+    if (filters && filters.brands) {
+      filtered = filtered.filter(_ => filters.brands.includes(_['Бренд']));
+    }
+    //In fact, returns empty array if requested a page beyond all available items
+    return {
+      total: filtered.length,
+      page: filtered.slice(pageSize * (pageIdx - 1), pageSize * pageIdx) //todo proper server-side pagination support
+    };
+  }, function failed(response) {
+    return Promise.reject(response.statusText);
+  });
+};
+
+result.startGetBrands =
+//returns a promise which resolves to Set<string> on success and status-text on failure
+function () {
+  return axios({
+    headers: { 'Content-Type': 'application/json' },
+    url: 'data.json',
+    params: { unique: "Бренд" } //url params for GET
+  }).then(function done(response) {
+    return new Set(response.data.page.map(_ => _["Бренд"]));
+  }, function failed(response) {
+    return Promise.reject(response.statusText);
+  });
+};
+
+module.exports = result;
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var React = __webpack_require__(0);
 
 var TableView = React.createClass({
   displayName: "TableView",
@@ -84,41 +137,8 @@ var TableView = React.createClass({
 
   columns: ["Название", "Цена", "Класс нагрузки", "Фаска", { name: "Картинка", present: url => React.createElement("img", { src: url }) }].map(column => column.name ? column : { name: column }),
 
-  getInitialState: function () {
-    return { data: [{
-        "ID": 12767,
-        "Артикул": "ip-lam-02-0020",
-        "Поставщик": "ip_balt",
-        "Бренд": "Balterio",
-        "Название": "Дуб aмбарный",
-        "Единица измерения": "кв.м",
-        "Базовая цена": 680,
-        "Цена": 850,
-        "Страна": "Бельгия",
-        "Коллекция": "Senator",
-        "Класс нагрузки": 32,
-        "Фаска": "нет",
-        "Эффекты": "",
-        "Размер планки, мм": "189x1261x7",
-        "Планок в упаковке, шт": 10,
-        "Вес упаковки": null,
-        "Кратность отгрузки, кв.м": 2.383,
-        "Структура поверхности": "древесная",
-        "Формат панели": "однополосный",
-        "Тип соединения": "",
-        "Защита от разбухания": "",
-        "Пропитка кантов по периметру": "",
-        "Антистатическое покрытие": "",
-        "Наличие подложки": "",
-        "Цвет": "",
-        "Площадь планки": 0.238329,
-        "Картинка": "http://popolam-nn.ru/i/o/c8/328_SEN.jpg"
-      }]
-    };
-  },
-
   render: function () {
-    var page = this.state.data;
+    var page = this.props.items;
     return React.createElement(
       "div",
       { className: "table-responsive" },
@@ -161,34 +181,122 @@ var TableView = React.createClass({
 module.exports = TableView;
 
 /***/ }),
-/* 2 */
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var React = __webpack_require__(0);
+
+var TilesView = React.createClass({
+    displayName: "TilesView",
+
+
+    render: function () {
+        var page = this.props.items;
+        return React.createElement(
+            "div",
+            { className: "row", id: "myTiles" },
+            page.map((item, i) => React.createElement(
+                "div",
+                { className: "col-sm-4 col-md-3 col-lg-2", key: item.ID },
+                React.createElement(
+                    "div",
+                    { className: "thumbnail" },
+                    React.createElement("img", { src: item['Картинка'] })
+                ),
+                React.createElement(
+                    "div",
+                    { className: "caption text-center" },
+                    item['Название']
+                ),
+                React.createElement(
+                    "p",
+                    null,
+                    "\u0426\u0435\u043D\u0430: \u0426\u0435\u043D\u0430"
+                ),
+                React.createElement(
+                    "p",
+                    null,
+                    "\u041A\u043B\u0430\u0441\u0441 \u043D\u0430\u0433\u0440\u0443\u0437\u043A\u0438: ",
+                    item["Класс нагрузки"]
+                ),
+                React.createElement(
+                    "p",
+                    null,
+                    "\u0424\u0430\u0441\u043A\u0430: ",
+                    item["Фаска"]
+                )
+            ))
+        );
+    }
+});
+
+module.exports = TilesView;
+
+/***/ }),
+/* 4 */
 /***/ (function(module, exports) {
 
 module.exports = ReactDOM;
 
 /***/ }),
-/* 3 */
+/* 5 */
+/***/ (function(module, exports) {
+
+module.exports = axios;
+
+/***/ }),
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var React = __webpack_require__(0);
-var TableView = __webpack_require__(1);
+var TableView = __webpack_require__(2);
+var TilesView = __webpack_require__(3);
+var data = __webpack_require__(1);
+
+//todo make part of component state
+var pageSize = 12;
+var filters = {};
+
+//register available presenters; constant and NOT a part of component state
+var presenters = {};
+presenters['TableView'] = items => React.createElement(TableView, { items: items });
+presenters['TilesView'] = items => React.createElement(TilesView, { items: items });
 
 //Main view, TODO split into components
 var Workspace = React.createClass({
   displayName: 'Workspace',
 
 
-  toggleLiked: function () {
-    this.setState({
-      liked: !this.state.liked
-    });
-  },
-
   getInitialState: function () {
     return {
-      liked: false
+      items: [],
+      //name of actual presenter used, now this IS a part of component state
+      presenter: (list => {
+        for (var any in list) return any;
+      })(presenters)
     };
   },
+
+  componentDidMount: function () {
+    this.queryData();
+  },
+
+  setPresenter: function (name) {
+    this.setState({ presenter: name });
+  },
+
+  queryData: function () {
+    var _this = this;
+    //    this.serverRequest =  //todo support several? and their bulk termination
+    data.startGetPage(1, pageSize, filters).then(result =>
+    //note the "(" before the map declaration - without them this would be recognized as method body, not the returned value :)
+    //todo version stamp to prevent overriding more fresh data, unless React watches that
+    _this.setState((state, props) => ({ items: result.page })));
+  },
+
+  // todo  componentWillUnmount: function() {
+  //    this.serverRequest.abort();
+  //  },
 
   render: function () {
     return React.createElement(
@@ -290,37 +398,7 @@ var Workspace = React.createClass({
         )
       ),
       React.createElement('p', { className: 'debug', id: 'urldebug' }),
-      React.createElement(TableView, null),
-      React.createElement('div', { className: 'row', id: 'myTiles' }),
-      React.createElement(
-        'div',
-        { className: 'col-sm-4 col-md-3 col-lg-2' },
-        React.createElement(
-          'div',
-          { name: 'thumbnail' },
-          React.createElement('img', { src: '\u041A\u0430\u0440\u0442\u0438\u043D\u043A\u0430' })
-        ),
-        React.createElement(
-          'div',
-          { className: 'caption text-center' },
-          '\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435'
-        ),
-        React.createElement(
-          'p',
-          null,
-          '\u0426\u0435\u043D\u0430: \u0426\u0435\u043D\u0430'
-        ),
-        React.createElement(
-          'p',
-          null,
-          '\u041A\u043B\u0430\u0441\u0441 \u043D\u0430\u0433\u0440\u0443\u0437\u043A\u0438: "\u041A\u043B\u0430\u0441\u0441 \u043D\u0430\u0433\u0440\u0443\u0437\u043A\u0438"'
-        ),
-        React.createElement(
-          'p',
-          null,
-          '\u0424\u0430\u0441\u043A\u0430: \u0424\u0430\u0441\u043A\u0430'
-        )
-      ),
+      presenters[this.state.presenter](this.state.items),
       React.createElement(
         'div',
         { className: 'col-md-12 text-center' },
@@ -332,7 +410,7 @@ var Workspace = React.createClass({
             { className: 'page-item view-mode view-list' },
             React.createElement(
               'a',
-              { className: 'page-link', href: '#' },
+              { className: 'page-link', href: '#', onClick: () => this.setPresenter('TableView') },
               React.createElement('span', { className: 'glyphicon glyphicon-th-list' })
             )
           ),
@@ -341,7 +419,7 @@ var Workspace = React.createClass({
             { className: 'page-item view-mode view-tiles' },
             React.createElement(
               'a',
-              { className: 'page-link', href: '#' },
+              { className: 'page-link', href: '#', onClick: () => this.setPresenter('TilesView') },
               React.createElement('span', { className: 'glyphicon glyphicon-th' })
             )
           )
@@ -397,7 +475,7 @@ var Workspace = React.createClass({
 });
 
 function run() {
-  var ReactDOM = __webpack_require__(2);
+  var ReactDOM = __webpack_require__(4);
   ReactDOM.render(React.createElement(Workspace, null), document.getElementById('workspace'));
 }
 

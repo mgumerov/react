@@ -6,79 +6,6 @@ module.exports = function() {
   var data;
   var handlebars;
 
-  function tabularPresenter() {
-      var columns = 
-        [
-         "Название",
-         "Цена",
-         "Класс нагрузки",
-         "Фаска",
-         { name: "Картинка", present: (url) => $("<img/>").attr("src",url) }
-        ];
-
-      columns.forEach((column,i,columns) => { if (!column.name) columns[i] = { name: column } });
-
-      function fill(page) {
-                $('#myTable tbody').empty();
-                page.forEach(function(row, i) {
-                    var tr = $('<tr/>').appendTo($('#myTable tbody'));
-                    columns.forEach(column => {
-                      var td = $("<td/>").appendTo(tr);
-                      var value = row[column.name];
-                      if (!column.present) {
-                        td.text(value);
-                      } else {
-                        td.append(column.present(value));
-                      }
-                    });
-                });
-      }
-
-      function init() {
-        $('#myTable').removeClass('hidden');
-        var tr = $('#myTable thead tr');
-        tr.empty();
-        columns.forEach(column => tr.append($("<th/>").text(column.name)));
-
-        startSetPage(1);
-      }
-
-      function hide() {
-        $('#myTable').addClass('hidden');
-      }
-
-      return {
-        fill: fill,
-        init: init,
-        hide: hide,
-        classname: 'view-list'
-      };
-  };
-
-  function tilePresenter() {
-    function fill(page) {
-              $('#myTiles').removeClass('hidden');
-              $('#myTiles').empty();
-              page.forEach(function(row, i) {
-                    var source = $("#sampleTile").html();
-                    var template = handlebars.compile(source);
-                    var html = template(row);
-                    $('#myTiles').append(html);
-              });
-    }
-
-    function hide() {
-      $('#myTiles').addClass('hidden');
-    }
-
-    return {
-      fill: fill,
-      init: () => {},
-      hide: hide,
-      classname: 'view-tiles'
-    };
-  }
-
   function init() {
       $('[data-filter-bind]').toArray().map(_ => { var s = $(_); eval(s.attr('data-filter-bind'))(s); });
       filters = {};
@@ -233,9 +160,7 @@ module.exports = function() {
 
   var page;
   var pageCnt;
-  var pageSize = 12;
   var presenter;
-  var filters;
 
   return {
     init: init

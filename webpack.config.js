@@ -16,6 +16,7 @@ module.exports = {
     //Use external version instead of webpack-controlled one, to speed up bundle creation
     externals: {
         'react': 'React',
-        'react-dom': 'ReactDOM'
+        'react-dom': 'ReactDOM',
+        'axios': 'axios'
     }
 }
