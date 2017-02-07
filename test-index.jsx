@@ -3,57 +3,8 @@ var TableView = require('./test-tabular');
 var TilesView = require('./test-tiles');
 var data = require('./test-data');
 
-//todo make part of component state
-var pageSize = 12;
-var filters = {};
-
-//register available presenters; constant and NOT a part of component state
-var presenters = {}
-presenters['TableView'] = {
-    render: (items) => <TableView items={items}/>,
-    renderIcon: () => <span className="glyphicon glyphicon-th-list"></span>};
-presenters['TilesView'] = {
-    render: (items) => <TilesView items={items}/>,
-    renderIcon: () => <span className="glyphicon glyphicon-th"></span>};
-
-
 //Main view, TODO split into components
 var Workspace = React.createClass({
-
-  getInitialState: function() {
-    return {
-      items: [],
-      //name of actual presenter used, now this IS a part of component state
-      presenter: (list => {for (var any in list) return any;})(presenters)
-    };
-  },
-
-  componentDidMount: function() {
-    this.queryData();
-  },
-
-  setPresenter: function (name) {
-    this.setState({presenter: name});
-  },
-
-  createPresenter: function (items) {
-    return (presenters[this.state.presenter]).render(items);
-  },
-
-  queryData: function() {
-    var _this = this;
-//    this.serverRequest =  //todo support several? and their bulk termination
-      data.startGetPage(1, pageSize, filters)
-        .then(result =>     
-          //note the "(" before the map declaration - without them this would be recognized as method body, not the returned value :)
-          //todo version stamp to prevent overriding more fresh data, unless React watches that
-          _this.setState((state, props) => ({ items: result.page }))
-        );
-  },
-
-// todo  componentWillUnmount: function() {
-//    this.serverRequest.abort();
-//  },
 
   render: function() {
     return (
@@ -103,7 +54,42 @@ var Workspace = React.createClass({
 
 </div>
     );
-  }
+  },
+
+  getInitialState: function() {
+    return {
+      items: [],
+      //name of actual presenter used, now this IS a part of component state
+      presenter: (list => {for (var any in list) return any;})(presenters)
+    };
+  },
+
+  componentDidMount: function() {
+    this.queryData();
+  },
+
+  setPresenter: function (name) {
+    this.setState({presenter: name});
+  },
+
+  createPresenter: function (items) {
+    return (presenters[this.state.presenter]).render(items);
+  },
+
+  queryData: function() {
+    var _this = this;
+//    this.serverRequest =  //todo support several? and their bulk termination
+      data.startGetPage(1, pageSize, filters)
+        .then(result =>     
+          //note the "(" before the map declaration - without them this would be recognized as method body, not the returned value :)
+          //todo version stamp to prevent overriding more fresh data, unless React watches that
+          _this.setState((state, props) => ({ items: result.page }))
+        );
+  },
+
+// todo  componentWillUnmount: function() {
+//    this.serverRequest.abort();
+//  },
 });
 
 function run() {
@@ -118,3 +104,16 @@ if (loadedStates.includes(document.readyState) && document.body) {
 } else {
   window.addEventListener('DOMContentLoaded', run, false);
 }
+
+//todo make part of component state
+var pageSize = 12;
+var filters = {};
+
+//register available presenters; constant and NOT a part of component state
+var presenters = {}
+presenters['TableView'] = {
+    render: (items) => <TableView items={items}/>,
+    renderIcon: () => <span className="glyphicon glyphicon-th-list"></span>};
+presenters['TilesView'] = {
+    render: (items) => <TilesView items={items}/>,
+    renderIcon: () => <span className="glyphicon glyphicon-th"></span>};
