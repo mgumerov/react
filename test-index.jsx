@@ -33,7 +33,7 @@ var Workspace = React.createClass({
 
 <p className="debug" id="urldebug"></p>
 
-{this.createPresenter(this.state.items)}
+{this.present(this.state.items)}
 
 <div className="col-md-12 text-center">
 <ul className="pagination pull-left">
@@ -72,7 +72,7 @@ var Workspace = React.createClass({
     this.setState({presenter: name});
   },
 
-  createPresenter: function (items) {
+  present: function (items) {
     return (presenters[this.state.presenter]).render(items);
   },
 
