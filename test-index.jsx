@@ -76,20 +76,29 @@ var Workspace = React.createClass({
     return (presenters[this.state.presenter]).render(items);
   },
 
-  queryData: function() {
-    var _this = this;
-//    this.serverRequest =  //todo support several? and their bulk termination
-      data.startGetPage(1, pageSize, filters)
-        .then(result =>     
-          //note the "(" before the map declaration - without them this would be recognized as method body, not the returned value :)
-          //todo version stamp to prevent overriding more fresh data, unless React watches that
-          _this.setState((state, props) => ({ items: result.page }))
-        );
+  //Minimize island of components which are held by any pending queries after un-mounting - they will hold this thunk instead
+  onDataChange: {
+    owner: null,
+
+    //note the "(" before the map declaration - without them this would be recognized as method body, not the returned value :)
+    process: function (result) { 
+      return this.owner ? this.owner.setState((state, props) => ({ items: result.page })) : null;
+    }
   },
 
-// todo  componentWillUnmount: function() {
-//    this.serverRequest.abort();
-//  },
+  queryData: function() {
+    var _this = this;
+    data.startGetPage(1, pageSize, filters)
+        .then(result => _this.onDataChange.process(result));
+  },
+
+  componentWillMount: function() {
+    this.onDataChange.owner = this;
+  },
+
+  componentWillUnmount: function() {
+    this.onDataChange.owner = null;
+  }
 });
 
 function run() {
