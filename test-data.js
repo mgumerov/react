@@ -2,6 +2,7 @@ var React = require('react');
 var axios = require('axios');
 
 var result = {};
+
 result.startGetPage =
     //returns a promise which resolves to {total, page} on success and status-text on failure
     function (pageIdx, pageSize, filters) {
