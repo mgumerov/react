@@ -1,6 +1,7 @@
 var React = require('react');
 var TableView = require('./test-tabular');
 var TilesView = require('./test-tiles');
+var Pagination = require('./test-pagination');
 var data = require('./test-data');
 
 //Main view, TODO split into components
@@ -41,15 +42,9 @@ var Workspace = React.createClass({
     <li className="page-item view-mode" key={key}><a className="page-link" href = "#" onClick={()=>this.setPresenter(key)}>{presenters[key].renderIcon()}</a></li>
   )}
 </ul>
-<nav>
-  <ul className="pagination tablepages">
-    <li className="page-item"><a className="page-link page-direct" data-visible="vis.home" href = "#">1</a></li>
-    <li className="page-item"><a className="page-link page-prev" data-visible="vis.prev" href = "#">&laquo;</a></li>
-    <li className="page-item active"><a className="page-link page-direct" data-source="page" href = "#"></a></li>
-    <li className="page-item"><a className="page-link page-next" data-visible="vis.next" href = "#">&raquo;</a></li>
-    <li className="page-item"><a className="page-link page-direct" data-source="pageCnt" data-visible="vis.end" href = "#"></a></li>
-  </ul>
-</nav>
+
+<Pagination thisPage={this.state.page} lastPage={this.state.pageCnt} onClick={this.onPagerClick}/>
+
 </div>
 
 </div>
@@ -58,6 +53,8 @@ var Workspace = React.createClass({
 
   getInitialState: function() {
     return {
+      page: null,
+      pageCnt: null,
       items: [],
       //name of actual presenter used, now this IS a part of component state
       presenter: (list => {for (var any in list) return any;})(presenters)
@@ -65,7 +62,7 @@ var Workspace = React.createClass({
   },
 
   componentDidMount: function() {
-    this.queryData();
+    this.queryData(1);
   },
 
   setPresenter: function (name) {
@@ -76,20 +73,46 @@ var Workspace = React.createClass({
     return (presenters[this.state.presenter]).render(items);
   },
 
+  onPagerClick: function(pageNum) {
+    this.queryData(pageNum);
+  },
+
   //Minimize island of components which are held by any pending queries after un-mounting - they will hold this thunk instead
   onDataChange: {
     owner: null,
 
-    //note the "(" before the map declaration - without them this would be recognized as method body, not the returned value :)
-    process: function (result) { 
-      return this.owner ? this.owner.setState((state, props) => ({ items: result.page })) : null;
+    process: function (result, pageNum) { 
+      if (!this.owner)
+          return;
+
+      var pgcount = Math.ceil(result.total / pageSize);
+
+      //Если такой страницы уже нет, ничего не делаем и вместо этого потребуем переход на ту, которая по нашим данным есть
+      //Может получиться, что фильтр сменился за это время на гуи, и возможно придется еще раз перечитать,
+      //  но это уже забота этого следующего порожденного нами асинка, не наша
+      if (pageNum > pgcount) {
+        //Заметим, что всякий раз номер страницы уменьшается, т.е. вечный цикл невозможен. Но конечно возможно, в теории,
+        //адское торможение, если сервер будет постепенно удалять элементы, и успевать каждый раз уменьшить кол-во страниц на 1
+        //как раз тогда, когда мы решили перейти на страницу назад; todo возможно, следует после 2-3 попыток сбрасывать сразу на первую страницу.
+        //todo Ручной переход на страницу например "1" должен откючать уже запущенные такие "автоматические" коррекционные повторные переходы, 
+        //  не то они отменят его действие
+        this.owner.startSetPage(pgcount, pageSize, filters);
+        return;
+      }
+
+      //note the "(" before the map declaration - without it this would be recognized as method body, not the returned value :)
+      this.owner.setState((state, props) => ({
+          items: result.page,
+          page: pageNum,
+          pageCnt: pgcount
+      }));
     }
   },
 
-  queryData: function() {
+  queryData: function(pageNum) {
     var _this = this;
-    data.startGetPage(1, pageSize, filters)
-        .then(result => _this.onDataChange.process(result));
+    data.startGetPage(pageNum, pageSize, filters)
+        .then(result => _this.onDataChange.process(result, pageNum));
   },
 
   componentWillMount: function() {
