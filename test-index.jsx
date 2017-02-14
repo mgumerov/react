@@ -2,6 +2,7 @@ var React = require('react');
 var TableView = require('./test-tabular');
 var TilesView = require('./test-tiles');
 var Pagination = require('./test-pagination');
+var CLBFilter = require('./test-clbfilter');
 var data = require('./test-data');
 
 //Main view, TODO split into components
@@ -14,16 +15,7 @@ var Workspace = React.createClass({
   <div className="form-group">
   Фильтры:
   </div>
-  <div className="form-group dropdown " data-filter-bind="bindClassFilter" data-filter-load="loadClassFilter" data-filter-clear="clearChecklistFilter">
-    <button type="button" className="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">Класс нагрузки<span className="caret"></span></button>
-    <ul className="dropdown-menu">
-      <li><a href="#" className="small" tabIndex="-1">Любой</a></li>
-      <li><a href="#" className="small" data-value="31" tabIndex="-1"><input type="checkbox"/>&nbsp;31</a></li>
-      <li><a href="#" className="small" data-value="32" tabIndex="-1"><input type="checkbox"/>&nbsp;32</a></li>
-      <li><a href="#" className="small" data-value="33" tabIndex="-1"><input type="checkbox"/>&nbsp;33</a></li>
-      <li><a href="#" className="small" data-value="34" tabIndex="-1"><input type="checkbox"/>&nbsp;34</a></li>
-    </ul>
-  </div>
+  <CLBFilter title="Класс нагрузки" onChange={console.log} items={ {"31":31, "32":32, "33":33, "34":34} }/>
   <div className="form-group dropdown " data-filter-bind="bindBrandFilter" data-filter-load="loadBrandFilter" data-filter-clear="clearChecklistFilter">
     <button type="button" className="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">Бренд<span className="caret"></span></button>
     <ul className="dropdown-menu">
