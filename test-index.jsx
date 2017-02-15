@@ -15,7 +15,7 @@ var Workspace = React.createClass({
   <div className="form-group">
   Фильтры:
   </div>
-  <CLBFilter title="Класс нагрузки" onChange={console.log} items={ {"31":31, "32":32, "33":33, "34":34} }/>
+  <CLBFilter title="Класс нагрузки" onChange={this.onFilterChange} items={ {"31":31, "32":32, "33":33, "34":34} } checks={toChecks(this.state.filters.classes)}/>
   <div className="form-group dropdown " data-filter-bind="bindBrandFilter" data-filter-load="loadBrandFilter" data-filter-clear="clearChecklistFilter">
     <button type="button" className="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">Бренд<span className="caret"></span></button>
     <ul className="dropdown-menu">
@@ -48,6 +48,7 @@ var Workspace = React.createClass({
       page: null,
       pageCnt: null,
       items: [],
+      filters: {},
       //name of actual presenter used, now this IS a part of component state
       presenter: (list => {for (var any in list) return any;})(presenters)
     };
@@ -69,6 +70,17 @@ var Workspace = React.createClass({
     this.queryData(pageNum);
   },
 
+  onFilterChange: function (callback) {
+    var newChecks = callback(toChecks(this.state.filters.classes));
+    var newFilter = fromChecks(newChecks);
+    this.setState(state => {
+       var newFilters = {};
+       for (key in Object.keys(state.filters)) newFilters[key] = state.filters[key];
+       newFilters.classes = newFilter;
+       return {filters: newFilters};
+    });
+  },
+
   //Minimize island of components which are held by any pending queries after un-mounting - they will hold this thunk instead
   onDataChange: {
     owner: null,
@@ -88,7 +100,7 @@ var Workspace = React.createClass({
         //как раз тогда, когда мы решили перейти на страницу назад; todo возможно, следует после 2-3 попыток сбрасывать сразу на первую страницу.
         //todo Ручной переход на страницу например "1" должен откючать уже запущенные такие "автоматические" коррекционные повторные переходы, 
         //  не то они отменят его действие
-        this.owner.startSetPage(pgcount, pageSize, filters);
+        this.owner.startSetPage(pgcount, pageSize, this.state.filters);
         return;
       }
 
@@ -103,7 +115,7 @@ var Workspace = React.createClass({
 
   queryData: function(pageNum) {
     var _this = this;
-    data.startGetPage(pageNum, pageSize, filters)
+    data.startGetPage(pageNum, pageSize, this.state.filters)
         .then(result => _this.onDataChange.process(result, pageNum));
   },
 
@@ -131,7 +143,18 @@ if (loadedStates.includes(document.readyState) && document.body) {
 
 //todo make part of component state
 var pageSize = 12;
-var filters = {};
+
+function gatherHash(array) {
+  return array.reduce( (hash, e) => {hash[e] = null; return hash}, {} );
+}
+
+function toChecks(clbfilter) {
+  return clbfilter ? gatherHash(clbfilter) : {};
+}
+
+function fromChecks(checksmap) {
+  return Object.keys(checksmap);
+}
 
 //register available presenters; constant and NOT a part of component state
 var presenters = {}
